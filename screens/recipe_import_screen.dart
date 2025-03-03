@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:my_recipe_app/screens/ingredient_converter_screen.dart';
+import 'package:cloudbakers/screens/ingredient_converter_screen.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class RecipeImportScreen extends StatefulWidget {
   const RecipeImportScreen({Key? key}) : super(key: key);
@@ -13,6 +15,11 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
   final TextEditingController _recipeTextController = TextEditingController();
   List<String> _extractedIngredients = [];
   late TabController _tabController;
+  
+  // Image upload variables
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+  bool _isImageProcessing = false;
 
   @override
   void initState() {
@@ -33,7 +40,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
   }
 
   void _processRecipe() {
-    // Simulate AI extraction
+    // Simulate AI extraction for text mode
     setState(() {
       _extractedIngredients = [
         "2 cups all-purpose flour",
@@ -41,6 +48,47 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
         "1/2 cup sugar",
         // Add more mock ingredients as needed
       ];
+    });
+  }
+
+  // Function to select an image from gallery
+  Future<void> _selectImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+          // Clear previous results when new image is selected
+          _extractedIngredients = [];
+        });
+      }
+    } catch (e) {
+      print("Error selecting image: $e");
+    }
+  }
+
+  // Function to process selected image and extract ingredients
+  void _extractIngredientsFromImage() {
+    if (_selectedImage == null) return;
+    
+    setState(() {
+      _isImageProcessing = true;
+    });
+    
+    // Simulate AI extraction delay
+    Future.delayed(const Duration(seconds: 2), () {
+      setState(() {
+        _isImageProcessing = false;
+        // Mock extracted ingredients from image
+        _extractedIngredients = [
+          "3 eggs",
+          "2 cups whole milk",
+          "1 tbsp vanilla extract",
+          "2 1/2 cups cake flour",
+          "1 cup granulated sugar",
+        ];
+      });
     });
   }
 
@@ -214,7 +262,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
               controller: _recipeTextController,
               maxLines: 8,
               decoration: const InputDecoration(
-                hintText: 'Paste your recipe text here...',
+                hintText: 'What do you want to bake today..',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(12)),
                   borderSide: BorderSide.none,
@@ -233,9 +281,9 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Extract Ingredients'),
+            child: const Text('Ingredients you will need are...'),
           ),
-          if (_extractedIngredients.isNotEmpty) ...[
+          if (_extractedIngredients.isNotEmpty && _isTextMode) ...[
             const SizedBox(height: 24),
             _buildExtractedIngredientsSection(),
           ],
@@ -245,54 +293,113 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
   }
 
   Widget _buildImageUploadTab() {
-    return Center(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.cloud_upload_outlined,
-                  size: 48,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Tap to upload image',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              // Implement image upload functionality
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 16,
-              ),
-              shape: RoundedRectangleBorder(
+          // Image preview or upload area
+          GestureDetector(
+            onTap: _selectImage,
+            child: Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _selectedImage == null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tap to upload image',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        _selectedImage!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 200,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // If no image is selected, show Select Image button
+          if (_selectedImage == null)
+            ElevatedButton(
+              onPressed: _selectImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Select Image'),
+            ),
+          
+          // If image is selected, show Extract Ingredients button
+          if (_selectedImage != null && !_isImageProcessing && _extractedIngredients.isEmpty)
+            ElevatedButton(
+              onPressed: _extractIngredientsFromImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Extract Ingredients'),
+            ),
+          
+          // Show loading indicator when processing
+          if (_isImageProcessing) ...[
+            const SizedBox(height: 16),
+            const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF4CAF50),
               ),
             ),
-            child: const Text('Select Image'),
-          ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text(
+                'Analyzing your recipe image...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+          
+          // Show extracted ingredients when available
+          if (_extractedIngredients.isNotEmpty && !_isTextMode) ...[
+            const SizedBox(height: 24),
+            _buildExtractedIngredientsSection(),
+          ],
         ],
       ),
     );
@@ -360,7 +467,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _processRecipe,
+                    onPressed: _isTextMode ? _processRecipe : _extractIngredientsFromImage,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       side: const BorderSide(color: Color(0xFF4CAF50)),
@@ -369,7 +476,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen> with SingleTick
                       ),
                     ),
                     child: const Text(
-                      'Reprocess',
+                      'Re-extract',
                       style: TextStyle(color: Color(0xFF4CAF50)),
                     ),
                   ),

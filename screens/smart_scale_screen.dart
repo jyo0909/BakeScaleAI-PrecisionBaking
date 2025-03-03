@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_recipe_app/screens/ingredient_converter_screen.dart';
-import 'package:my_recipe_app/screens/recipe_import_screen.dart';
+import 'package:cloudbakers/screens/ingredient_converter_screen.dart';
+import 'package:cloudbakers/screens/recipe_import_screen.dart';
 import 'dart:math' as math;
 
 class SmartScaleScreen extends StatefulWidget {

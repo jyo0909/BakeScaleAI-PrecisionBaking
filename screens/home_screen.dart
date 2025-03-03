@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:my_recipe_app/screens/ingredient_converter_screen.dart';
-import 'package:my_recipe_app/screens/recipe_import_screen.dart';
-import 'package:my_recipe_app/screens/smart_scale_screen.dart';  // Add this import
-import 'package:my_recipe_app/widgets/settings_panel.dart';
+import 'package:cloudbakers/screens/ingredient_converter_screen.dart';
+import 'package:cloudbakers/screens/recipe_import_screen.dart';
+import 'package:cloudbakers/screens/smart_scale_screen.dart';
+import 'package:cloudbakers/widgets/settings_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,6 +14,61 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isSettingsPanelOpen = false;
+  final PageController _pageController = PageController(viewportFraction: 0.92);
+  Timer? _autoSlideTimer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start auto-sliding when the screen initializes
+    _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _stopAutoSlide();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoSlide() {
+    // Create a timer that slides the images every 3 seconds
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!mounted) return;
+      
+      final List<Map<String, String>> features = [
+        {
+          'image': 'assets/images/image1.jpg',
+          'subtitle': 'Instantly switch between cups, grams, ounces, and more',
+          'title': 'Effortless Measurement Conversion',
+        },
+        {
+          'image': 'assets/images/image2.jpg',
+          'subtitle': 'Upload a recipe image or paste text to get structured ingredients and steps',
+          'title': 'Instant Recipe Upload',
+        },
+        {
+          'image': 'assets/images/image3.jpg',
+          'subtitle': 'Connect a smart scale for accurate weight measurements in real time',
+          'title': 'Precision made easy with digital smart scale',
+        },
+      ];
+      
+      _currentPage = (_currentPage + 1) % features.length;
+      
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +81,12 @@ class _HomeScreenState extends State<HomeScreen> {
       {
         'image': 'assets/images/image2.jpg',
         'subtitle': 'Upload a recipe image or paste text to get structured ingredients and steps',
-        'title': 'Seamless Recipe Import',
+        'title': 'Instant Recipe Upload',
       },
       {
         'image': 'assets/images/image3.jpg',
         'subtitle': 'Connect a smart scale for accurate weight measurements in real time',
-        'title': 'Precision with Smart Scale',
+        'title': 'Precision made easy with digital smart scale',
       },
     ];
 
@@ -48,9 +104,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Good morning, User",
+                        "Good morning, CloudBakers",
                         style: TextStyle(
-                          fontSize: 30,
+                          fontSize: 40,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -76,9 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
-                    "What's for today",
+                    "What's on your mind",
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 30,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -88,8 +144,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.92),
+                      controller: _pageController,
                       itemCount: features.length,
+                      onPageChanged: (int page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
                       itemBuilder: (context, index) {
                         return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -142,6 +203,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+
+                // Page indicator dots
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    features.length,
+                    (index) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentPage == index
+                          ? const Color(0xFF4CAF50)
+                          : Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
 
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -209,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
           
           if (_isSettingsPanelOpen)
             SettingsPanel(
-              userName: "User Name",
+              userName: "CloudBakers",
               onClose: () {
                 setState(() {
                   _isSettingsPanelOpen = false;
