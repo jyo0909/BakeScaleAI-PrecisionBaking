@@ -4,12 +4,14 @@ class SettingsPanel extends StatefulWidget {
   final VoidCallback onClose;
   final String userName;
   final String? profileImageUrl;
+  final VoidCallback? onLogout; // Added logout callback
 
   const SettingsPanel({
     Key? key,
     required this.onClose,
     required this.userName,
     this.profileImageUrl,
+    this.onLogout, // Added optional parameter
   }) : super(key: key);
 
   @override
@@ -148,7 +150,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Cloud Bakers",
+                        widget.userName, // Use the username from the widget
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -216,7 +218,10 @@ class _SettingsPanelState extends State<SettingsPanel> {
             'Sign Out',
             Icons.exit_to_app,
             onTap: () {
-              // Handle sign out
+              if (widget.onLogout != null) {
+                widget.onLogout!(); // Use the logout callback if provided
+              }
+              widget.onClose(); // Close the panel after logout
             },
             isDestructive: true,
           ),
@@ -441,7 +446,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
                     ),
                   ),
                   
-                  _buildProfileDetailItem('User Name', 'cloudbakers'),
+                  _buildProfileDetailItem('User Name', widget.userName),
                   
                   _buildProfilePhotoItem(),
                   

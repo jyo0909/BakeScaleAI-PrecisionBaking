@@ -1,44 +1,60 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/home_screen.dart'; // Import the home screen
-import 'screens/login_screen.dart'; // Import the login screen
+import 'firebase_options.dart';
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase Initialization with Error Handling
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    runApp(const MyApp());
+  } catch (e) {
+    print("🔥 Firebase initialization failed: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
-  //const MyApp({super.key});
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Recipe App',
-      theme: ThemeData(primarySwatch: Colors.green),
-      initialRoute: '/', // Define initial route
-      routes: {
-        '/': (context) => const LoginPage(), // Login screen as initial route
-        '/home': (context) => const HomeScreen(), // Home screen route
-      },
-      // Localization support
-      supportedLocales: [
-        const Locale('en', 'US'),
-        const Locale('es', 'ES'),
-        const Locale('fr', 'FR'),
-      ],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      localeResolutionCallback: (locale, supportedLocales) {
-        for (var supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == locale?.languageCode &&
-              supportedLocale.countryCode == locale?.countryCode) {
-            return supportedLocale;
-          }
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            minimumSize: const Size(0, 50), // Changed from double.infinity to 0
+          ),
+        ),
+      ),
+      initialRoute: '/login',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/home':
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(
+              builder: (context) => HomeScreen(username: args?['username'] ?? 'Guest'),
+            );
+          case '/login':
+            return MaterialPageRoute(builder: (context) => const LoginScreen());
+          case '/register':
+            return MaterialPageRoute(builder: (context) => const RegisterScreen());
+          default:
+            return MaterialPageRoute(builder: (context) => const LoginScreen());
         }
-        return supportedLocales.first;
       },
     );
   }

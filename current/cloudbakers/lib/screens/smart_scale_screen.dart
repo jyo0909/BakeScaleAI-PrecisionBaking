@@ -47,6 +47,12 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
     return width < 500 ? 10 : 12;
   }
 
+  /// Navigate to home screen - FIXED to ensure consistent navigation
+  void _navigateToHome(BuildContext context) {
+    // Clear navigation stack and replace with home route
+    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+  }
+
   /// Nav button with possibly different font sizes for mobile/desktop,
   /// or a manual override (fontSizeOverride).
   Widget _buildNavButton(
@@ -152,323 +158,337 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+    // Calculate the screen width once, to use for fixed width constraints
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    return WillPopScope(
+      // Handle back button press
+      onWillPop: () async {
+        _navigateToHome(context);
+        return false; // Prevent default back behavior
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+  
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => _navigateToHome(context),
+          ),
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Smart Scale Connection',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Real-time weight tracking',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Smart Scale Connection',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'Real-time weight tracking',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      /// Scroll if needed on smaller screens
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Connection Panel
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: 12,
-                            color: isConnected ? Colors.green : Colors.red,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isConnected ? 'Connected' : 'Disconnected',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+  
+        /// Scroll if needed on smaller screens
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Connection Panel
+              Container(
+                width: screenWidth,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 12,
+                              color: isConnected ? Colors.green : Colors.red,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isConnected ? 'Connected' : 'Disconnected',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              isConnected = !isConnected;
+                            });
+                          },
+                          icon: Icon(isConnected ? Icons.link_off : Icons.link),
+                          label: Text(isConnected ? 'Disconnect' : 'Connect'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+  
+              // Weight Display
+              Container(
+                width: screenWidth,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          size: const Size(200, 200),
+                          painter: WeightDialPainter(
+                            progress: currentWeight / targetWeight,
+                            color: getWeightColor(),
+                            animation: _animationController.value,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      '${currentWeight.toStringAsFixed(1)}g',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: getWeightColor(),
                       ),
-                      ElevatedButton.icon(
+                    ),
+                    Text(
+                      'Target: ${targetWeight.toStringAsFixed(1)}g',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+  
+              // Ingredient Detection
+              Container(
+                width: screenWidth,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Ingredient Type',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _buildIngredientType('Powder', Icons.grain),
+                        _buildIngredientType('Liquid', Icons.water_drop),
+                        _buildIngredientType('Crystal', Icons.diamond),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+  
+              // Action Buttons
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                width: screenWidth - 32,
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
                         onPressed: () {
                           setState(() {
-                            isConnected = !isConnected;
+                            measurementHistory.add({
+                              'weight': currentWeight,
+                              'type': ingredientType,
+                              'timestamp': DateTime.now(),
+                            });
                           });
                         },
-                        icon: Icon(isConnected ? Icons.link_off : Icons.link),
-                        label: Text(isConnected ? 'Disconnect' : 'Connect'),
+                        icon: const Icon(Icons.save),
+                        label: const Text('Save Log'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white, // This makes the text white
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Weight Display
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        size: const Size(200, 200),
-                        painter: WeightDialPainter(
-                          progress: currentWeight / targetWeight,
-                          color: getWeightColor(),
-                          animation: _animationController.value,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => _buildHistoryDialog(),
+                          );
+                        },
+                        icon: const Icon(Icons.history),
+                        label: const Text('View History'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF4CAF50),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+  
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+  
+        // Bottom navigation bar
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Container(
+            width: screenWidth,
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 1),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildNavButton(
+                    context,
+                    icon: Icons.home,
+                    label: 'Home',
+                    onTap: () => _navigateToHome(context),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildNavButton(
+                    context,
+                    icon: Icons.calculate,
+                    label: 'Convert Measurement',
+                    fontSizeOverride: 9,
+                    onTap: () {
+                      // Navigate to IngredientConverterScreen with proper stack management
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const IngredientConverterScreen(),
+                        ),
+                        (route) => false,
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    '${currentWeight.toStringAsFixed(1)}g',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: getWeightColor(),
-                    ),
-                  ),
-                  Text(
-                    'Target: ${targetWeight.toStringAsFixed(1)}g',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Ingredient Detection
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ingredient Type',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Use Wrap for narrower screens
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildIngredientType('Powder', Icons.grain),
-                      _buildIngredientType('Liquid', Icons.water_drop),
-                      _buildIngredientType('Crystal', Icons.diamond),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Action Buttons
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Save log
-                        setState(() {
-                          measurementHistory.add({
-                            'weight': currentWeight,
-                            'type': ingredientType,
-                            'timestamp': DateTime.now(),
-                          });
-                        });
-                      },
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Log'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        foregroundColor: Colors.white, // This makes the text white
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildNavButton(
+                    context,
+                    icon: Icons.upload_file,
+                    label: 'Import Recipe',
+                    onTap: () {
+                      // Navigate to RecipeImportScreen with proper stack management
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const RecipeImportScreen(),
                         ),
-                      ),
-                    ),
+                        (route) => false,
+                      );
+                    },
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // Show history dialog
-                        showDialog(
-                          context: context,
-                          builder: (context) => _buildHistoryDialog(),
-                        );
-                      },
-                      icon: const Icon(Icons.history),
-                      label: const Text('View History'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF4CAF50),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildNavButton(
+                    context,
+                    icon: Icons.bluetooth,
+                    label: 'BakeScale',
+                    isSelected: true,
+                    onTap: () {
+                      // No navigation needed - already on this screen
+                    },
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
-
-            const SizedBox(height: 16), // Extra bottom space so nav is visible
-          ],
-        ),
-      ),
-
-      // SafeArea bottom nav bar so it doesn't overlap with system nav
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 1),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          // Add sized boxes between items for extra horizontal gap
-          child: Row(
-            children: [
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildNavButton(
-                  context,
-                  icon: Icons.home,
-                  label: 'Home',
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildNavButton(
-                  context,
-                  icon: Icons.calculate,
-                  label: 'Convert Measurement',
-                  // Here we set the override to make the font size 9
-                  fontSizeOverride: 9,
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const IngredientConverterScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildNavButton(
-                  context,
-                  icon: Icons.upload_file,
-                  label: 'Import Recipe',
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecipeImportScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildNavButton(
-                  context,
-                  icon: Icons.bluetooth,
-                  label: 'BakeScale',
-                  isSelected: true,
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
           ),
         ),
       ),
