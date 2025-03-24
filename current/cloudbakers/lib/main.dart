@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/voice_assistant_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,11 +38,21 @@ class MyApp extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            minimumSize: const Size(0, 50), // Changed from double.infinity to 0
+            minimumSize: const Size(0, 50),
           ),
         ),
       ),
       initialRoute: '/login',
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('es', 'ES'),
+        Locale('fr', 'FR'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/home':
@@ -52,6 +64,8 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (context) => const LoginScreen());
           case '/register':
             return MaterialPageRoute(builder: (context) => const RegisterScreen());
+          case '/voice-assistant':
+            return MaterialPageRoute(builder: (context) => const VoiceAssistantScreen());
           default:
             return MaterialPageRoute(builder: (context) => const LoginScreen());
         }

@@ -761,6 +761,17 @@ class _IngredientConverterScreenState extends State<IngredientConverterScreen> {
                       onTap: _connectToScale,
                     ),
                   ),
+
+                      // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+                      Expanded(
+                        child: _buildNavButton(
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -791,7 +802,7 @@ class _IngredientConverterScreenState extends State<IngredientConverterScreen> {
               maxLines: 2,
               style: TextStyle(
                   color: isSelected ? const Color(0xFF4CAF50) : Colors.grey,
-                  fontSize: 9),
+                  fontSize: 8.1),
             ),
           ),
         ],

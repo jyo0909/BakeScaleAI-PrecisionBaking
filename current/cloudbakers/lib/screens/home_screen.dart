@@ -461,13 +461,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           },
                         ),
                       ),
+                      // New button for voice assistant
+                      Expanded(
+                        child: _buildNavButton(
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-
           // Settings panel with logout functionality
           if (_isSettingsPanelOpen && !_isDisposed)
             _buildSettingsPanel(),
@@ -503,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               maxLines: 2,
               style: TextStyle(
                 color: isSelected ? const Color(0xFF4CAF50) : Colors.grey,
-                fontSize: 9,
+                fontSize: 8.1,
               ),
             ),
           ),
@@ -526,8 +535,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       },
       userName: widget.username,
-      profileImageUrl: _userData != null && _userData!.containsKey('profileImageUrl') 
-          ? _userData!['profileImageUrl'] 
+      profileImageUrl: _userData != null && _userData!.containsKey('profileImageUrl')
+          ? _userData!['profileImageUrl']
           : null,
       onLogout: _logout,
     );

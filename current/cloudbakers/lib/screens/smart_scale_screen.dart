@@ -40,21 +40,18 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
     return Colors.grey.shade400;
   }
 
-  /// Determine nav bar text size based on screen width
+  /// Determine nav bar text size based on screen width.
   double _getNavBarFontSize(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    // Use smaller size on narrow (mobile) screens, bigger on wider (desktop) screens
     return width < 500 ? 10 : 12;
   }
 
-  /// Navigate to home screen - FIXED to ensure consistent navigation
+  /// Navigate to home screen.
   void _navigateToHome(BuildContext context) {
-    // Clear navigation stack and replace with home route
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
   }
 
-  /// Nav button with possibly different font sizes for mobile/desktop,
-  /// or a manual override (fontSizeOverride).
+  /// Nav button with optional font size override.
   Widget _buildNavButton(
     BuildContext context, {
     required IconData icon,
@@ -120,7 +117,8 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
               type,
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.grey,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight:
+                    isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],
@@ -158,14 +156,13 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Calculate the screen width once, to use for fixed width constraints
+    // Calculate screen width once.
     final screenWidth = MediaQuery.of(context).size.width;
     
     return WillPopScope(
-      // Handle back button press
       onWillPop: () async {
         _navigateToHome(context);
-        return false; // Prevent default back behavior
+        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.grey[50],
@@ -199,7 +196,6 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
           ),
         ),
   
-        /// Scroll if needed on smaller screens
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,45 +215,41 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                     ),
                   ],
                 ),
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: 12,
-                              color: isConnected ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isConnected ? 'Connected' : 'Disconnected',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        Icon(
+                          Icons.circle,
+                          size: 12,
+                          color: isConnected ? Colors.green : Colors.red,
                         ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              isConnected = !isConnected;
-                            });
-                          },
-                          icon: Icon(isConnected ? Icons.link_off : Icons.link),
-                          label: Text(isConnected ? 'Disconnect' : 'Connect'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isConnected ? 'Connected' : 'Disconnected',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          isConnected = !isConnected;
+                        });
+                      },
+                      icon: Icon(isConnected ? Icons.link_off : Icons.link),
+                      label: Text(isConnected ? 'Disconnect' : 'Connect'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -412,7 +404,7 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
           ),
         ),
   
-        // Bottom navigation bar
+        // Bottom Navigation Bar
         bottomNavigationBar: SafeArea(
           top: false,
           child: Container(
@@ -447,10 +439,10 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                     label: 'Convert Measurement',
                     fontSizeOverride: 9,
                     onTap: () {
-                      // Navigate to IngredientConverterScreen with proper stack management
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
-                          builder: (context) => const IngredientConverterScreen(),
+                          builder: (context) =>
+                              const IngredientConverterScreen(),
                         ),
                         (route) => false,
                       );
@@ -464,10 +456,10 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                     icon: Icons.upload_file,
                     label: 'Import Recipe',
                     onTap: () {
-                      // Navigate to RecipeImportScreen with proper stack management
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
-                          builder: (context) => const RecipeImportScreen(),
+                          builder: (context) =>
+                              const RecipeImportScreen(),
                         ),
                         (route) => false,
                       );
@@ -482,7 +474,7 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                     label: 'BakeScale',
                     isSelected: true,
                     onTap: () {
-                      // No navigation needed - already on this screen
+                      // Already on this screen.
                     },
                   ),
                 ),
@@ -512,21 +504,18 @@ class WeightDialPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = math.min(size.width, size.height) / 2;
 
-    // Draw background circle
     final backgroundPaint = Paint()
       ..color = Colors.grey.shade200
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20;
     canvas.drawCircle(center, radius, backgroundPaint);
 
-    // Draw progress arc
     final progressPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
       ..strokeCap = StrokeCap.round;
 
-    // Subtle animation effect
     final progressWithAnimation =
         progress * (1 + 0.05 * math.sin(animation * 2 * math.pi));
 
