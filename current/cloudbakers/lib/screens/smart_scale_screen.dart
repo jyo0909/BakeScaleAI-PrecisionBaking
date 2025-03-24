@@ -430,7 +430,7 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                   icon: Icons.calculate,
                   label: 'Convert Measurement',
                   // Here we set the override to make the font size 9
-                  fontSizeOverride: 9,
+                  fontSizeOverride: 8.1,
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
@@ -468,6 +468,19 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
                 ),
               ),
               const SizedBox(width: 8),
+
+          // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+                      Expanded(
+                        child: _buildNavButton(
+                          context,
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
+            const SizedBox(width: 8),
             ],
           ),
         ),

@@ -309,13 +309,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
+
+                      // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+                      Expanded(
+                        child: _buildNavButton(
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-
           if (_isSettingsPanelOpen)
             SettingsPanel(
               userName: "CloudBakers",
@@ -354,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
               maxLines: 2,
               style: TextStyle(
                 color: isSelected ? const Color(0xFF4CAF50) : Colors.grey,
-                fontSize: 9,
+                fontSize: 8.1,
               ),
             ),
           ),

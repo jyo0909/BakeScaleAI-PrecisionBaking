@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/home_screen.dart'; // Import the home screen
-import 'screens/login_screen.dart'; // Import the login screen
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/voice_assistant_screen.dart'; // your new import
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  //const MyApp({super.key});
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Recipe App',
       theme: ThemeData(primarySwatch: Colors.green),
-      initialRoute: '/', // Define initial route
+      initialRoute: '/',
       routes: {
-        '/': (context) => const LoginPage(), // Login screen as initial route
-        '/home': (context) => const HomeScreen(), // Home screen route
+        '/': (context) => const LoginPage(),
+        '/home': (context) => const HomeScreen(),
+        '/voice-assistant': (context) => const VoiceAssistantScreen(), // new screen
       },
-      // Localization support
-      supportedLocales: [
-        const Locale('en', 'US'),
-        const Locale('es', 'ES'),
-        const Locale('fr', 'FR'),
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('es', 'ES'),
+        Locale('fr', 'FR'),
       ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

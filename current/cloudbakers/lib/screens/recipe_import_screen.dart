@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
-
+import 'package:cloudbakers/services/gemini_api.dart';
 import 'package:flutter/material.dart';
 import 'package:cloudbakers/screens/ingredient_converter_screen.dart';
 import 'package:http/http.dart' as http;
@@ -49,6 +49,8 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
 
   // Holds the extracted ingredients as a list of Ingredient objects.
   List<Ingredient> _extractedIngredients = [];
+  // New field to store instructions from the recipe.
+  List<String> _instructions = [];
 
   // New field to store the recipe heading (name)
   String? _recipeName;
@@ -87,20 +89,59 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     super.dispose();
   }
 
-  /// For text mode, simulate extraction with dummy data.
-  void _processRecipe() {
+  /// For text mode, simulate extraction with Gemini API including instructions.
+  void _processRecipe() async {
+    final dishName = _recipeTextController.text.trim();
+
+    if (dishName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a recipe name!')),
+      );
+      return;
+    }
+
     setState(() {
-      // In text mode, we might not extract a heading automatically.
-      _recipeName = null;
-      _extractedIngredients = [
-        Ingredient(quantity: 2, unit: "cups", name: "all-purpose flour"),
-        Ingredient(quantity: 1, unit: "tsp", name: "baking powder"),
-        Ingredient(quantity: 0.5, unit: "cup", name: "sugar"),
-      ];
-      _conversionResults = [];
+      _isConverting = true;
+      _recipeName = dishName;
+      _extractedIngredients.clear();
+      _instructions.clear();
+      _conversionResults.clear();
       _substitutionResult = null;
       _selectedSubstitutionIngredient = null;
     });
+
+    try {
+      final recipeData = await GeminiApi.getRecipe(dishName);
+      // Expecting a JSON object with keys "ingredients" and "instructions"
+      final ingredientsJson = recipeData['ingredients'] as List<dynamic>;
+      final instructionsJson = recipeData['instructions'] as List<dynamic>;
+
+      final ingredients = ingredientsJson.map<Ingredient>((ing) {
+        return Ingredient(
+          quantity: (ing['quantity'] as num).toDouble(),
+          unit: ing['unit'],
+          name: ing['name'],
+          skipConversion: ing['skipConversion'] ?? false,
+        );
+      }).toList();
+
+      final instructions = instructionsJson.map((step) => step.toString()).toList();
+
+      setState(() {
+        _recipeName = dishName;
+        _extractedIngredients = ingredients;
+        _instructions = instructions;
+      });
+    } catch (e) {
+      print("Error fetching recipe: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Couldn't fetch recipe for $dishName")),
+      );
+    } finally {
+      setState(() {
+        _isConverting = false;
+      });
+    }
   }
 
   /// Pick an image from the gallery.
@@ -115,8 +156,9 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
           setState(() {
             _selectedImage = file;
             _imageAspectRatio = img.width / img.height;
-            // Clear previous extraction results and recipe name.
+            // Clear previous extraction results, recipe name, and instructions.
             _extractedIngredients = [];
+            _instructions = [];
             _conversionResults = [];
             _substitutionResult = null;
             _selectedSubstitutionIngredient = null;
@@ -214,6 +256,8 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
           _conversionResults = [];
           _substitutionResult = null;
           _selectedSubstitutionIngredient = null;
+          // Note: When extracting from image, instructions are not generated.
+          _instructions = [];
         });
       } else {
         print('Google Cloud Vision API error: ${response.body}');
@@ -457,12 +501,13 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     });
   }
 
-  /// Save the current conversion results along with the recipe name.
+  /// Save the current conversion results along with the recipe name and instructions.
   void _saveRecipe() {
     setState(() {
       _savedConversions.add({
         "recipeName": _recipeName,
         "conversions": _conversionResults,
+        "instructions": _instructions,
       });
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -470,7 +515,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     );
   }
 
-  /// Display saved conversions (with recipe name) in an AlertDialog.
+  /// Display saved conversions (with recipe name and instructions) in an AlertDialog.
   void _viewSaved() {
     showDialog(
       context: context,
@@ -486,6 +531,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                 var log = _savedConversions[index];
                 String recipeName = log["recipeName"] ?? "Unnamed Recipe";
                 List conversions = log["conversions"] ?? [];
+                List instructions = log["instructions"] ?? [];
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -504,6 +550,16 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                           item["conversion"] as Map<String, dynamic>;
                       return _buildConversionContainer(ing, conv, isFromSaved: true);
                     }).toList(),
+                    if (instructions.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Instructions:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      ...instructions.map((step) => Text("• $step")).toList(),
+                    ],
                     const Divider(),
                   ],
                 );
@@ -746,7 +802,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                         onPressed: _getConversions,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white, // This makes the text white
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -853,7 +909,6 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                // We apply a smaller font to the dropdown if needed
                 DropdownButton<String>(
                   hint: Text(
                     "If you want an ingredient substitution, select the ingredient:",
@@ -908,7 +963,6 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -963,6 +1017,54 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     );
   }
 
+  /// Build a section to display instructions from the recipe.
+  Widget _buildInstructionsSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double titleFontSize = screenWidth < 400 ? 14 : 20;
+    final double stepFontSize = screenWidth < 400 ? 12 : 16;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Instructions',
+            style: TextStyle(
+              fontSize: titleFontSize,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _instructions.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  '${index + 1}. ${_instructions[index]}',
+                  style: TextStyle(fontSize: stepFontSize),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Text input tab.
   Widget _buildTextInputTab() {
     return SingleChildScrollView(
@@ -1000,17 +1102,21 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
             onPressed: _processRecipe,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white, // This makes the text white
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Ingredients you will need are...'),
+            child: const Text('Get Recipe'),
           ),
           if (_extractedIngredients.isNotEmpty && _isTextMode) ...[
             const SizedBox(height: 24),
             _buildExtractedIngredientsSection(),
+          ],
+          if (_instructions.isNotEmpty && _isTextMode) ...[
+            const SizedBox(height: 24),
+            _buildInstructionsSection(),
           ],
         ],
       ),
@@ -1087,7 +1193,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
               onPressed: _selectImage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white, // This makes the text white
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1102,7 +1208,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
               onPressed: _extractIngredientsFromImage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white, // This makes the text white
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1132,6 +1238,10 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
             const SizedBox(height: 24),
             _buildExtractedIngredientsSection(),
           ],
+          if (_instructions.isNotEmpty && !_isTextMode) ...[
+            const SizedBox(height: 24),
+            _buildInstructionsSection(),
+          ],
         ],
       ),
     );
@@ -1160,10 +1270,9 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
               textAlign: TextAlign.center,
               softWrap: true,
               maxLines: 2,
-              // Decreased from 12 to 9 earlier; you can tweak further
               style: TextStyle(
                 color: isSelected ? const Color(0xFF4CAF50) : Colors.grey,
-                fontSize: 9,
+                fontSize: 8.1,
               ),
             ),
           ),
@@ -1224,19 +1333,15 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
           ),
         ],
       ),
-
-      // Main body with the tab bar up top and tab views
       body: Column(
         children: [
           Container(
             color: Colors.white,
-            // Decrease font size for "Upload Recipe Image" tab:
             child: TabBar(
               controller: _tabController,
               indicatorColor: const Color(0xFF4CAF50),
               labelColor: const Color(0xFF4CAF50),
               unselectedLabelColor: Colors.grey,
-              // This reduces the tab text size for both tabs:
               labelStyle: const TextStyle(fontSize: 12),
               tabs: const [
                 Tab(
@@ -1261,11 +1366,8 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
           ),
         ],
       ),
-
-      // Move the bottom navigation bar into the bottomNavigationBar property
-      // and wrap it in a SafeArea so it sits above the device's system nav bar.
       bottomNavigationBar: SafeArea(
-        top: false, // Only want bottom padding
+        top: false,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
@@ -1320,6 +1422,18 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                   },
                 ),
               ),
+
+                                // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+                      Expanded(
+                        child: _buildNavButton(
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
+              
             ],
           ),
         ),
