@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "786374840248",
+    "project_id": "cloudbakers-1b4b3",
+    "storage_bucket": "cloudbakers-1b4b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786374840248:android:f3b0d9f267d7a030c7494d",
+        "android_client_info": {
+          "package_name": "com.example.cloudbakers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "786374840248-2agh5pkju9g87iidts9jhc8amktfe3c6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cloudbakers",
+            "certificate_hash": "4e040d7412b409abe38d6be58fe7d61a5c08c810"
+          }
+        },
+        {
+          "client_id": "786374840248-i74s7gkn4nfpcr5d6h7m2uh572cdphlr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeuC5wkvoaqFQpnyBjkF-Yh06vw9K3PJo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "786374840248-i74s7gkn4nfpcr5d6h7m2uh572cdphlr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "786374840248-269gjs2ilf1t8nojif5hp438shfkip2l.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cloudbakers"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
