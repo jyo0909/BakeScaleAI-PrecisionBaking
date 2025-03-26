@@ -4,7 +4,9 @@ import 'package:cloudbakers/screens/recipe_import_screen.dart';
 import 'dart:math' as math;
 
 class SmartScaleScreen extends StatefulWidget {
-  const SmartScaleScreen({Key? key}) : super(key: key);
+  final String username;
+
+  const SmartScaleScreen({Key? key, required this.username}) : super(key: key);
 
   @override
   State<SmartScaleScreen> createState() => _SmartScaleScreenState();
@@ -47,9 +49,14 @@ class _SmartScaleScreenState extends State<SmartScaleScreen>
   }
 
   /// Navigate to home screen.
-  void _navigateToHome(BuildContext context) {
-    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-  }
+void _navigateToHome(BuildContext context) {
+  Navigator.pushReplacementNamed(
+    context,
+    '/home',
+    arguments: {'username': widget.username},
+  );
+}
+
 
   /// Nav button with optional font size override.
   Widget _buildNavButton(
