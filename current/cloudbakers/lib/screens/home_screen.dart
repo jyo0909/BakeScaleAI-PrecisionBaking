@@ -456,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           label: 'BakeScale',
                           onTap: () {
                             if (!_isNavigating && !_isDisposed) {
-                              _navigateToScreen(const SmartScaleScreen());
+                              _navigateToScreen(SmartScaleScreen(username: widget.username));
                             }
                           },
                         ),
