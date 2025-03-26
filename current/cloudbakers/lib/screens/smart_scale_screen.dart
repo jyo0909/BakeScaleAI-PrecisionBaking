@@ -328,26 +328,26 @@ void _navigateToHome(BuildContext context) {
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Ingredient Type',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const Text(
+                    'Ingredient Type',
+                    style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _buildIngredientType('Powder', Icons.grain),
-                        _buildIngredientType('Liquid', Icons.water_drop),
-                        _buildIngredientType('Crystal', Icons.diamond),
-                      ],
-                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                    _buildIngredientType('Powder', Icons.grain),
+                    _buildIngredientType('Liquid', Icons.water_drop),
+                    _buildIngredientType('Crystal', Icons.diamond),
+                    ],
+                  ),
                   ],
                 ),
               ),
@@ -444,7 +444,7 @@ void _navigateToHome(BuildContext context) {
                     context,
                     icon: Icons.calculate,
                     label: 'Convert Measurement',
-                    fontSizeOverride: 9,
+                    fontSizeOverride: 7.6,
                     onTap: () {
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
@@ -486,6 +486,18 @@ void _navigateToHome(BuildContext context) {
                   ),
                 ),
                 const SizedBox(width: 8),
+                                      // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+                      Expanded(
+                        child: _buildNavButton(
+                          context,
+                          icon: Icons.mic,
+                          label: 'BakeBot',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/voice-assistant');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
               ],
             ),
           ),

@@ -1416,7 +1416,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
               Expanded(
                 child: _buildNavButton(
                   icon: Icons.bluetooth,
-                  label: 'Connect Smart Scale',
+                  label: 'BakeScale',
                   onTap: () {
                     // Implement smart scale connection if needed.
                   },

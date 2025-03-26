@@ -253,7 +253,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           "Don't have an account?",
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12
+                          ),
                         ),
                         TextButton(
                           onPressed: () {
@@ -268,6 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               color: Colors.green[700],
                               fontWeight: FontWeight.bold,
+                              fontSize: 13
                             ),
                           ),
                         ),
