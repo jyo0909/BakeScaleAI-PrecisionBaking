@@ -756,7 +756,7 @@ class _IngredientConverterScreenState extends State<IngredientConverterScreen> {
                   Expanded(
                     child: _buildNavButton(
                       icon: Icons.bluetooth,
-                      label: 'Connect Smart Scale',
+                      label: 'BakeScale',
                       isSelected: isConnectedToScale,
                       onTap: _connectToScale,
                     ),

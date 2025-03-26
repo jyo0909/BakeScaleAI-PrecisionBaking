@@ -138,17 +138,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Please fill the details to register',
                         style: TextStyle(
                           color: Colors.grey[600],
-                          fontSize: 16,
+                          fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 32),
                       
                       // Username field
-                      TextFormField(
+                        TextFormField(
                         controller: _usernameController,
                         decoration: const InputDecoration(
                           hintText: 'Username',
                           prefixIcon: Icon(Icons.person_outline),
+                          hintStyle: TextStyle(fontSize: 12),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -169,6 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: InputDecoration(
                           hintText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline),
+                          hintStyle: TextStyle(fontSize: 12),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _isPasswordVisible
@@ -200,6 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         obscureText: !_isConfirmPasswordVisible,
                         decoration: InputDecoration(
                           hintText: 'Confirm Password',
+                          hintStyle: TextStyle(fontSize: 12),
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -272,10 +275,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                            Text(
                             'Already have an account?',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                            ),
                           TextButton(
                             onPressed: () {
                               Navigator.of(context).pushReplacement(
@@ -289,6 +295,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: TextStyle(
                                 color: Colors.green[700],
                                 fontWeight: FontWeight.bold,
+                                fontSize: 12
                               ),
                             ),
                           ),
