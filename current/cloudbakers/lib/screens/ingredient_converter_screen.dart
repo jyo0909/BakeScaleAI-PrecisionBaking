@@ -63,9 +63,6 @@ class _IngredientConverterScreenState extends State<IngredientConverterScreen> {
     'tbsp',
     'tsp',
     'grams',
-    'ml',
-    'oz',
-    'lb',
   ];
 
   // Conversion factors relative to grams/ml.
@@ -75,8 +72,6 @@ class _IngredientConverterScreenState extends State<IngredientConverterScreen> {
       'tbsp': 7.5,
       'tsp': 2.5,
       'grams': 1.0,
-      'oz': 28.35,
-      'lb': 453.6,
     },
     'Sugar': {
       'cups': 200.0,
