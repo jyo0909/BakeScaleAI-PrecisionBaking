@@ -9,15 +9,14 @@ import 'screens/voice_assistant_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Firebase Initialization with Error Handling
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     runApp(const MyApp());
   } catch (e) {
-    print("🔥 Firebase initialization failed: $e");
+    runApp(ErrorApp(error: e.toString()));
   }
 }
 
@@ -58,18 +57,44 @@ class MyApp extends StatelessWidget {
           case '/home':
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
-              builder: (context) => HomeScreen(username: args?['username'] ?? 'Guest'),
+              builder: (context) =>
+                  HomeScreen(username: args?['username'] ?? 'Guest'),
             );
           case '/login':
             return MaterialPageRoute(builder: (context) => const LoginScreen());
           case '/register':
             return MaterialPageRoute(builder: (context) => const RegisterScreen());
           case '/voice-assistant':
-            return MaterialPageRoute(builder: (context) => const VoiceAssistantScreen());
+            return MaterialPageRoute(
+                builder: (context) => const VoiceAssistantScreen());
           default:
             return MaterialPageRoute(builder: (context) => const LoginScreen());
         }
       },
+    );
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  final String error;
+
+  const ErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Firebase initialization failed:\n$error',
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
