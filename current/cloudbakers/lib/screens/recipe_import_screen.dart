@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:cloudbakers/services/gemini_api.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloudbakers/screens/ingredient_converter_screen.dart';
 import 'package:http/http.dart' as http;
@@ -56,7 +58,8 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
   String? _recipeName;
 
   // Image upload variables
-  File? _selectedImage;
+  File? _selectedImage; // used for mobile
+  Uint8List? _selectedImageBytes; // used for web
   double? _imageAspectRatio;
   final ImagePicker _picker = ImagePicker();
   bool _isImageProcessing = false;
@@ -149,22 +152,42 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        final file = File(image.path);
-        final bytes = await file.readAsBytes();
-        // Decode image dimensions for aspect ratio.
-        ui.decodeImageFromList(bytes, (img) {
-          setState(() {
-            _selectedImage = file;
-            _imageAspectRatio = img.width / img.height;
-            // Clear previous extraction results, recipe name, and instructions.
-            _extractedIngredients = [];
-            _instructions = [];
-            _conversionResults = [];
-            _substitutionResult = null;
-            _selectedSubstitutionIngredient = null;
-            _recipeName = null;
+        if (kIsWeb) {
+          // For web, read bytes directly.
+          final bytes = await image.readAsBytes();
+          ui.decodeImageFromList(bytes, (img) {
+            setState(() {
+              _selectedImageBytes = bytes;
+              _imageAspectRatio = img.width / img.height;
+              _selectedImage = null;
+              // Clear previous extraction results, recipe name, and instructions.
+              _extractedIngredients.clear();
+              _instructions.clear();
+              _conversionResults.clear();
+              _substitutionResult = null;
+              _selectedSubstitutionIngredient = null;
+              _recipeName = null;
+            });
           });
-        });
+        } else {
+          // For mobile platforms, use File.
+          final file = File(image.path);
+          final bytes = await file.readAsBytes();
+          ui.decodeImageFromList(bytes, (img) {
+            setState(() {
+              _selectedImage = file;
+              _imageAspectRatio = img.width / img.height;
+              _selectedImageBytes = null;
+              // Clear previous extraction results, recipe name, and instructions.
+              _extractedIngredients.clear();
+              _instructions.clear();
+              _conversionResults.clear();
+              _substitutionResult = null;
+              _selectedSubstitutionIngredient = null;
+              _recipeName = null;
+            });
+          });
+        }
       }
     } catch (e) {
       print("Error selecting image: $e");
@@ -184,14 +207,20 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
   /// Use Google Cloud Vision API to extract text from the selected image.
   /// This method now also extracts the recipe heading from the first nonempty line.
   Future<void> _extractIngredientsFromImage() async {
-    if (_selectedImage == null) return;
+    Uint8List bytes;
+    if (kIsWeb) {
+      if (_selectedImageBytes == null) return;
+      bytes = _selectedImageBytes!;
+    } else {
+      if (_selectedImage == null) return;
+      bytes = await _selectedImage!.readAsBytes();
+    }
 
     setState(() {
       _isImageProcessing = true;
     });
 
     try {
-      final bytes = await _selectedImage!.readAsBytes();
       final base64Image = base64Encode(bytes);
 
       final requestPayload = jsonEncode({
@@ -693,6 +722,81 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
     );
   }
 
+  /// Build a section to display a preview of the selected image.
+  Widget _buildImagePreview() {
+    if (kIsWeb && _selectedImageBytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final containerWidth = constraints.maxWidth;
+            final dynamicHeight = _imageAspectRatio != null
+                ? containerWidth / _imageAspectRatio!
+                : 200.0;
+            final previewHeight = min(dynamicHeight, 300.0);
+            return SizedBox(
+              width: containerWidth,
+              height: previewHeight,
+              child: Image.memory(_selectedImageBytes!, fit: BoxFit.contain),
+            );
+          },
+        ),
+      );
+    } else if (_selectedImage != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final containerWidth = constraints.maxWidth;
+            final dynamicHeight = _imageAspectRatio != null
+                ? containerWidth / _imageAspectRatio!
+                : 200.0;
+            final previewHeight = min(dynamicHeight, 300.0);
+            return SizedBox(
+              width: containerWidth,
+              height: previewHeight,
+              child: Image.file(_selectedImage!, fit: BoxFit.contain),
+            );
+          },
+        ),
+      );
+    } else {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_upload_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tap to upload image',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   /// Build the main container with extracted ingredients and conversion results.
   Widget _buildExtractedIngredientsSection() {
     // Dynamically adjust fonts for mobile
@@ -1132,63 +1236,10 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
         children: [
           GestureDetector(
             onTap: _selectImage,
-            child: _selectedImage == null
-                ? Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.cloud_upload_outlined,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Tap to upload image',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final containerWidth = constraints.maxWidth;
-                        final dynamicHeight = _imageAspectRatio != null
-                            ? containerWidth / _imageAspectRatio!
-                            : 200.0;
-                        final previewHeight = min(dynamicHeight, 300.0);
-                        return SizedBox(
-                          width: containerWidth,
-                          height: previewHeight,
-                          child: Image.file(
-                            _selectedImage!,
-                            fit: BoxFit.contain,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+            child: _buildImagePreview(),
           ),
           const SizedBox(height: 16),
-          if (_selectedImage == null)
+          if ((_selectedImage == null && _selectedImageBytes == null))
             ElevatedButton(
               onPressed: _selectImage,
               style: ElevatedButton.styleFrom(
@@ -1201,7 +1252,7 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
               ),
               child: const Text('Select Image'),
             ),
-          if (_selectedImage != null &&
+          if ((_selectedImage != null || _selectedImageBytes != null) &&
               !_isImageProcessing &&
               _extractedIngredients.isEmpty)
             ElevatedButton(
@@ -1422,18 +1473,16 @@ class _RecipeImportScreenState extends State<RecipeImportScreen>
                   },
                 ),
               ),
-
-                                // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
-                      Expanded(
-                        child: _buildNavButton(
-                          icon: Icons.mic,
-                          label: 'BakeBot',
-                          onTap: () {
-                            Navigator.pushNamed(context, '/voice-assistant');
-                          },
-                        ),
-                      ),
-              
+              // >>> NEW BUTTON FOR VOICE ASSISTANT <<<
+              Expanded(
+                child: _buildNavButton(
+                  icon: Icons.mic,
+                  label: 'BakeBot',
+                  onTap: () {
+                    Navigator.pushNamed(context, '/voice-assistant');
+                  },
+                ),
+              ),
             ],
           ),
         ),
